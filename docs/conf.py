@@ -49,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'start'
 
 # General information about the project.
-project = u'F5_Service_POP'
+project = u'F5_GSLB_in_AWS'
 copyright = u'2017, Vladimir Bojkovic'
 author = u'Vladimir Bojkovic'
 
@@ -103,7 +103,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'F5_Service_POPdoc'
+htmlhelp_basename = 'F5_GSLB_in_AWSdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -130,7 +130,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'F5_Service_POP.tex', u'F5\\_Service\\_POP Documentation',
+    (master_doc, 'F5_GSLB_in_AWS.tex', u'F5\\_GSLB\\_in\\_POP Documentation',
      u'Vladimir Bojkovic', 'manual'),
 ]
 
@@ -140,7 +140,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'f5_service_pop', u'F5_Service_POP Documentation',
+    (master_doc, 'f5_gslb_in_aws', u'F5_GSLB_in_AWS Documentation',
      [author], 1)
 ]
 
@@ -151,8 +151,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'F5_Service_POP', u'F5_Service_POP Documentation',
-     author, 'F5_Service_POP', 'One line description of project.',
+    (master_doc, 'F5_GSLB_in_AWS', u'F5_GSLB_in_AWS Documentation',
+     author, 'F5_GSLB_in_AWS', 'One line description of project.',
      'Miscellaneous'),
 ]
 
