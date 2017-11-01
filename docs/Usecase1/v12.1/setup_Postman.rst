@@ -85,4 +85,4 @@ Perform the following steps to complete this task:
     - Click the ‘Send’ button
     - Verify the installation was successful by:
     - Examine the response tests and ensure the ‘Install Successful’ test passed
-      - Examine your Postman Global Environment and look for a _f5_workflow_functions item populated with JavaScript code
+        - Examine your Postman Global Environment and look for a _f5_workflow_functions item populated with JavaScript code
