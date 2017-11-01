@@ -1,7 +1,7 @@
 Setup Postman
 =============
 
-For this automation setup we will use the Google REST API clinet "Postman"
+For this automation setup we will use the Google REST API client "Postman"
 
 Task0 - download and install Postman
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,11 +46,9 @@ Perform the following steps to complete this task:
    the Postman window
 
 #. Click the `Import from Link` tab.  Paste the following URL into the
-   text box and click :guilabel:`Import`
+   text box and click send.
 
-   .. parsed-literal::
-
-      :raw_github_url:`/Architectures/Usecase1/v12.1/Postman/DNS-LTM-POP_v12.1.postman_collection.json`
+   https://raw.githubusercontent.com/vbojko/F5_Service_POP/master/Architectures/Usecase1/v12.1/Postman/DNS-LTM-POP_v12.1.postman_collection.json
 
 #. You should now see a collection named ``DNS-LTM-POP_v12.1`` in your Postman
    Collections sidebar. Postman automatically resizes its GUI depending on its
@@ -61,9 +59,7 @@ Perform the following steps to complete this task:
 #. Import the Environment file by clicking `Import --> Import from Link` and
    pasting the following URL and clicking `Import`:
 
-   .. parsed-literal::
-
-      :raw_github_url:`/Architectures/Usecase1/v12.1/Postman/DNS-LTM-POP_Environment_Setup.postman_environment.json`
+      https://raw.githubusercontent.com/vbojko/F5_Service_POP/master/Architectures/Usecase1/v12.1/Postman/DNS-LTM-POP_Environment_Setup.postman_environment.json
 
 #. Set your environment to
    ``DNS-LTM-POP_Environment_Setup`` by using the menu at the top right
