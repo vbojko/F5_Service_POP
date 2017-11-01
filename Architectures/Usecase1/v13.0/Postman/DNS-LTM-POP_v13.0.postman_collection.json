@@ -1,0 +1,3635 @@
+{
+	"variables": [],
+	"info": {
+		"name": "DNS-LTM-POP_v13.0",
+		"_postman_id": "c826911d-e33f-7049-a6c5-f19108a578a3",
+		"description": "This Pollection establishes configures 2 BIG-IP DNS and 2 BIG-IP LTM to work together for Globas Load balancing.\n\nThe Design is that one BIG-IP DNS and one BIG-IP LTM live in the same datacenter.\n\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1 - BIG-IP-Environment Setup",
+			"description": "",
+			"item": [
+				{
+					"name": "01 BIG-IP_DNS-setup",
+					"description": "",
+					"item": [
+						{
+							"name": "01a - System Config DNS1",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_DNS1 Authentication Token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_DNS1_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Set BIG-IP_DNS1 Authentication Token Timeout",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "2",
+												"value": ""
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"timeout\":\"36000\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authz/tokens/{{big_ip_DNS1_auth_token}}",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 2: Set BIG-IP-DNS1 Global-Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"guiSetup\": \"disabled\",\n  \"hostname\": \"{{big_ip_DNS1_hostname}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/sys/global-settings",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Set BIG-IP DNS1 Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"nameServers\": [\n    \"{{DNSServer1}}\",\n    \"{{DNSServer2}}\"\n  ],\n  \"search\": [\n    \"{{DNS_search_domain}}\"\n  ]\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/sys/dns",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 4: Set DNS1 NTP Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"servers\": [\n    \"{{NTP_Server}}\"\n  ],\n  \"timezone\": \"{{NTP_timezone}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/sys/ntp",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 5: Set DNS1 admin User Password",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"password\":\"{{admin_pwd_new}}\",\n    \"shell\": \"bash\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/auth/user/admin",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 6: provision DNS1 Modules - generic",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n      \"name\": \"{{BIGIP-Module}}\",\n      \"level\": \"{{BIGIP-Module_level}}\"\n    }"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/sys/provision/{{BIGIP-Module}}",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "01b - System Config DNS2",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_DNS2 Authentication Token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_DNS2_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Set BIG-IP_DNS2 Authentication Token Timeout",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"timeout\":\"36000\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authz/tokens/{{big_ip_DNS2_auth_token}}",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 2: Set BIG-IP-DNS2 Global-Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"guiSetup\": \"disabled\",\n  \"hostname\": \"{{big_ip_DNS2_hostname}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/sys/global-settings",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Set BIG-IP DNS2 Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"nameServers\": [\n    \"{{DNSServer1}}\",\n    \"{{DNSServer2}}\"\n  ],\n  \"search\": [\n    \"{{DNS_search_domain}}\"\n  ]\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/sys/dns",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 4: Set DNS2 NTP Settings copy",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"servers\": [\n    \"{{NTP_Server}}\"\n  ],\n  \"timezone\": \"{{NTP_timezone}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/sys/ntp",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 5: Set DNS2 admin User Password",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"password\":\"{{admin_pwd_new}}\",\n    \"shell\": \"bash\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/auth/user/admin",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 6: provision DNS2 Modules - generic",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n      \"name\": \"{{BIGIP-Module}}\",\n      \"level\": \"{{BIGIP-Module_level}}\"\n    }"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/sys/provision/{{BIGIP-Module}}",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "02a - Basic Network Config DNS1",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_DNS1 Authentication Token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_DNS1_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Create public VLAN DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{VLAN_ext_name}}\",\n  \"partition\": \"Common\",\n  \"autoLasthop\": \"default\",\n  \"cmpHash\": \"default\",\n  \"mtu\": \"1500\",\n  \"tag\": \"{{VLAN_ext_tag}}\",\n  \"interfaces\": \n    [ \n        {\n            \"name\":\"{{VLAN_ext_interface}}\",\n            \"tagged\":{{VLAN_ext_tagged}}\n        }\n    ]\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/net/vlan/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 2: Create public Self IP DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"name\": \"{{VLAN_ext_name}}_self\",\n   \"partition\": \"Common\",\n   \"address\": \"{{VLAN_ext_selfIP_DNS1}}{{VLAN_ext_selfIP_DNS1_CIDR}}\",\n   \"floating\": \"disabled\",\n   \"trafficGroup\": \"/Common/traffic-group-local-only\",\n   \"vlan\": \"/Common/{{VLAN_ext_name}}\",\n   \"allowService\": [\"default\"]\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/net/self/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Create default Route DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"Default\",\n  \"partition\": \"Common\",\n  \"gw\": \"{{default_gateway_DNS1}}\",\n  \"mtu\": 0,\n  \"network\": \"0.0.0.0/0\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/net/route",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "02b - Basic Network Config DNS2",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_DNS2 Authentication Token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_DNS2_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Create public VLAN DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{VLAN_ext_name}}\",\n  \"partition\": \"Common\",\n  \"autoLasthop\": \"default\",\n  \"cmpHash\": \"default\",\n  \"mtu\": \"1500\",\n  \"tag\": \"{{VLAN_ext_tag}}\",\n  \"interfaces\": \n    [ \n        {\n            \"name\":\"{{VLAN_ext_interface}}\",\n            \"tagged\":{{VLAN_ext_tagged}}\n        }\n    ]\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/net/vlan/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 2: Create public Self IP DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"name\": \"{{VLAN_ext_name}}_self\",\n   \"partition\": \"Common\",\n   \"address\": \"{{VLAN_ext_selfIP_DNS2}}{{VLAN_ext_selfIP_DNS2_CIDR}}\",\n   \"floating\": \"disabled\",\n   \"trafficGroup\": \"/Common/traffic-group-local-only\",\n   \"vlan\": \"/Common/{{VLAN_ext_name}}\",\n   \"allowService\": [\"default\"]\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/net/self/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Create default Route DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"Default\",\n  \"partition\": \"Common\",\n  \"gw\": \"{{default_gateway_DNS2}}\",\n  \"mtu\": 0,\n  \"network\": \"0.0.0.0/0\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/net/route",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "03a - DNS1 specific config",
+							"description": "The design is that two BIG-IP DNS exists. In case only one Exists delete the section for BIG-IP DNS 2",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_DNS1 Authentication Token copy copy",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_DNS1_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "DNS-global settings DNS1",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"autoDiscovery\": \"yes\",\n  \"autoDiscoveryInterval\": 30,\n  \"automaticConfigurationSaveTimeout\": 15,\n  \"cacheLdnsServers\": \"yes\",\n  \"domainNameCheck\": \"allow-underscore\",\n  \"drainPersistentRequests\": \"yes\",\n  \"forwardStatus\": \"disabled\",\n  \"gtmSetsRecursion\": \"no\",\n  \"heartbeatInterval\": 10,\n  \"monitorDisabledObjects\": \"no\",\n  \"nethsmTimeout\": 20,\n  \"sendWildcardRrs\": \"disabled\",\n  \"staticPersistCidrIpv4\": 32,\n  \"staticPersistCidrIpv6\": 128,\n  \"synchronization\": \"no\",\n  \"synchronizationGroupName\": \"default-sync-group\",\n  \"synchronizationTimeTolerance\": 10,\n  \"synchronizationTimeout\": 180,\n  \"synchronizeZoneFiles\": \"no\",\n  \"synchronizeZoneFilesTimeout\": 300,\n  \"virtualsDependOnServerState\": \"yes\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/global-settings/general",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create DNS profile DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"DNS_Profile\",\n  \"fullPath\": \"DNS_Profile\",\n  \"avrDnsstatSampleRate\": 0,\n  \"defaultsFrom\": \"/Common/dns\",\n  \"dns64\": \"disabled\",\n  \"dns64AdditionalSectionRewrite\": \"disabled\",\n  \"dns64Prefix\": \"any6\",\n  \"enableCache\": \"no\",\n  \"enableDnsExpress\": \"yes\",\n  \"enableDnsFirewall\": \"no\",\n  \"enableDnssec\": \"no\",\n  \"enableGtm\": \"yes\",\n  \"enableHardwareQueryValidation\": \"no\",\n  \"enableHardwareResponseCache\": \"no\",\n  \"enableLogging\": \"no\",\n  \"enableRapidResponse\": \"yes\",\n  \"processRd\": \"yes\",\n  \"processXfr\": \"no\",\n  \"rapidResponseLastAction\": \"drop\",\n  \"unhandledQueryAction\": \"drop\",\n  \"useLocalBind\": \"yes\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/ltm/profile/dns/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create DNS profile for TCP DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"DNS_Profile_TCP\",\n  \"fullPath\": \"DNS_Profile_TCP\",\n  \"avrDnsstatSampleRate\": 0,\n  \"defaultsFrom\": \"/Common/dns\",\n  \"dns64\": \"disabled\",\n  \"dns64AdditionalSectionRewrite\": \"disabled\",\n  \"dns64Prefix\": \"any6\",\n  \"enableCache\": \"no\",\n  \"enableDnsExpress\": \"yes\",\n  \"enableDnsFirewall\": \"no\",\n  \"enableDnssec\": \"no\",\n  \"enableGtm\": \"yes\",\n  \"enableHardwareQueryValidation\": \"no\",\n  \"enableHardwareResponseCache\": \"no\",\n  \"enableLogging\": \"no\",\n  \"enableRapidResponse\": \"no\",\n  \"processRd\": \"yes\",\n  \"processXfr\": \"no\",\n  \"rapidResponseLastAction\": \"drop\",\n  \"unhandledQueryAction\": \"drop\",\n  \"useLocalBind\": \"yes\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/ltm/profile/dns/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Create TCP listener DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"name\":\"{{big_ip_DNS1_hostname}}_listener_tcp\",\n\t\"partition\": \"Common\",\n\t\"address\":\"{{VLAN_ext_selfIP_DNS1}}\",\n\t\"ipProtocol\":\"tcp\",\n\t\"port\":53,\n\t\"profiles\":\"DNS_Profile_TCP\",\n\t\"vlansEnabled\":true,\n\t\"vlans\":[\"{{VLAN_ext_name}}\"]\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/listener",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Create UDP listener DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"name\":\"{{big_ip_DNS1_hostname}}_listener_udp\",\n\t\"partition\": \"Common\",\n\t\"address\":\"{{VLAN_ext_selfIP_DNS1}}\",\n\t\"ipProtocol\":\"udp\",\n\t\"port\":53,\n\t\"profiles\":\"DNS_Profile\",\n\t\"vlansEnabled\":true,\n\t\"vlans\":[\"{{VLAN_ext_name}}\"]\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/listener",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create datacenter AZ1 DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{Datacenter1_name}}\",\n  \"contact\": \"{{DC_Contact}}\",\n  \"description\": \"{{DC_description}}\",\n  \"enabled\": true,\n  \"location\": \"{{DC1_location}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/datacenter/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create datacenter AZ2 DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{Datacenter2_name}}\",\n  \"contact\": \"{{DC_Contact}}\",\n  \"description\": \"{{DC_description}}\",\n  \"enabled\": true,\n  \"location\": \"{{DC2_location}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/datacenter/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config DNS1",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "03b - DNS2 specific config",
+							"description": "The design is that two BIG-IP DNS exists. In case only one Exists delete the section for BIG-IP DNS 2",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_DNS2 Authentication Token copy copy",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_DNS2_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "DNS-global settings DNS2",
+									"request": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"autoDiscovery\": \"yes\",\n  \"autoDiscoveryInterval\": 30,\n  \"automaticConfigurationSaveTimeout\": 15,\n  \"cacheLdnsServers\": \"yes\",\n  \"domainNameCheck\": \"allow-underscore\",\n  \"drainPersistentRequests\": \"yes\",\n  \"forwardStatus\": \"disabled\",\n  \"gtmSetsRecursion\": \"no\",\n  \"heartbeatInterval\": 10,\n  \"monitorDisabledObjects\": \"no\",\n  \"nethsmTimeout\": 20,\n  \"sendWildcardRrs\": \"disabled\",\n  \"staticPersistCidrIpv4\": 32,\n  \"staticPersistCidrIpv6\": 128,\n  \"synchronization\": \"no\",\n  \"synchronizationGroupName\": \"default-sync-group\",\n  \"synchronizationTimeTolerance\": 10,\n  \"synchronizationTimeout\": 180,\n  \"synchronizeZoneFiles\": \"no\",\n  \"synchronizeZoneFilesTimeout\": 300,\n  \"virtualsDependOnServerState\": \"yes\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/global-settings/general",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create DNS profile DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"DNS_Profile\",\n  \"fullPath\": \"DNS_Profile\",\n  \"avrDnsstatSampleRate\": 0,\n  \"defaultsFrom\": \"/Common/dns\",\n  \"dns64\": \"disabled\",\n  \"dns64AdditionalSectionRewrite\": \"disabled\",\n  \"dns64Prefix\": \"any6\",\n  \"enableCache\": \"no\",\n  \"enableDnsExpress\": \"yes\",\n  \"enableDnsFirewall\": \"no\",\n  \"enableDnssec\": \"no\",\n  \"enableGtm\": \"yes\",\n  \"enableHardwareQueryValidation\": \"no\",\n  \"enableHardwareResponseCache\": \"no\",\n  \"enableLogging\": \"no\",\n  \"enableRapidResponse\": \"yes\",\n  \"processRd\": \"yes\",\n  \"processXfr\": \"no\",\n  \"rapidResponseLastAction\": \"drop\",\n  \"unhandledQueryAction\": \"drop\",\n  \"useLocalBind\": \"yes\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/ltm/profile/dns/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create DNS profile for TCP DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"DNS_Profile_TCP\",\n  \"fullPath\": \"DNS_Profile_TCP\",\n  \"avrDnsstatSampleRate\": 0,\n  \"defaultsFrom\": \"/Common/dns\",\n  \"dns64\": \"disabled\",\n  \"dns64AdditionalSectionRewrite\": \"disabled\",\n  \"dns64Prefix\": \"any6\",\n  \"enableCache\": \"no\",\n  \"enableDnsExpress\": \"yes\",\n  \"enableDnsFirewall\": \"no\",\n  \"enableDnssec\": \"no\",\n  \"enableGtm\": \"yes\",\n  \"enableHardwareQueryValidation\": \"no\",\n  \"enableHardwareResponseCache\": \"no\",\n  \"enableLogging\": \"no\",\n  \"enableRapidResponse\": \"no\",\n  \"processRd\": \"yes\",\n  \"processXfr\": \"no\",\n  \"rapidResponseLastAction\": \"drop\",\n  \"unhandledQueryAction\": \"drop\",\n  \"useLocalBind\": \"yes\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/ltm/profile/dns/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Create TCP listener DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"name\":\"{{big_ip_DNS2_hostname}}_listener_tcp\",\n\t\"partition\": \"Common\",\n\t\"address\":\"{{VLAN_ext_selfIP_DNS2}}\",\n\t\"ipProtocol\":\"tcp\",\n\t\"port\":53,\n\t\"profiles\":\"DNS_Profile_TCP\",\n\t\"vlansEnabled\":true,\n\t\"vlans\":[\"{{VLAN_ext_name}}\"]\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/listener",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Create UDP listener DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"name\":\"{{big_ip_DNS2_hostname}}_listener_udp\",\n\t\"partition\": \"Common\",\n\t\"address\":\"{{VLAN_ext_selfIP_DNS2}}\",\n\t\"ipProtocol\":\"udp\",\n\t\"port\":53,\n\t\"profiles\":\"DNS_Profile\",\n\t\"vlansEnabled\":true,\n\t\"vlans\":[\"{{VLAN_ext_name}}\"]\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/listener",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create datacenter AZ1 DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{Datacenter1_name}}\",\n  \"contact\": \"{{DC_Contact}}\",\n  \"description\": \"{{DC_description}}\",\n  \"enabled\": true,\n  \"location\": \"{{DC1_location}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/datacenter/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "create datacenter AZ2 DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{Datacenter2_name}}\",\n  \"contact\": \"{{DC_Contact}}\",\n  \"description\": \"{{DC_description}}\",\n  \"enabled\": true,\n  \"location\": \"{{DC2_location}}\"\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/datacenter/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config DNS2",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_DNS2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "02 BIG-IP_LTM-setup",
+					"description": "Use this for both LTM. \nRun this collection but change the Environment file for each LTM\n",
+					"item": [
+						{
+							"name": "01a - System Config LTM1",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_A Authentication Token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_LTM1_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Set BIG-IP_A Authentication Token Timeout",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"timeout\":\"36000\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/shared/authz/tokens/{{big_ip_LTM1_auth_token}}",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Set BIG-IP-A Global-Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"guiSetup\": \"disabled\",\n  \"hostname\": \"{{big_ip_LTM1_hostname}}\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/sys/global-settings",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Set BIG-IP DNS Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"nameServers\": [\n    \"{{DNSServer1}}\",\n    \"{{DNSServer2}}\"\n  ],\n  \"search\": [\n    \"{{DNS_search_domain}}\"\n  ]\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/sys/dns",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": " Step 6: Set System NTP Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"servers\": [\n    \"{{NTP_Server}}\"\n  ],\n  \"timezone\": \"{{NTP_timezone}}\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/sys/ntp",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": " Step 8: Set admin User Password",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"password\":\"{{admin_pwd_new}}\",\n    \"shell\": \"bash\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/auth/user/admin",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "01b - System Config LTM2",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_A Authentication Token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_LTM2_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Set BIG-IP_A Authentication Token Timeout",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"timeout\":\"36000\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/shared/authz/tokens/{{big_ip_LTM2_auth_token}}",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Set BIG-IP-A Global-Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"guiSetup\": \"disabled\",\n  \"hostname\": \"{{big_ip_LTM2_hostname}}\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/sys/global-settings",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Set BIG-IP DNS Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"nameServers\": [\n    \"{{DNSServer1}}\",\n    \"{{DNSServer2}}\"\n  ],\n  \"search\": [\n    \"{{DNS_search_domain}}\"\n  ]\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/sys/dns",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": " Step 6: Set System NTP Settings",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"servers\": [\n    \"{{NTP_Server}}\"\n  ],\n  \"timezone\": \"{{NTP_timezone}}\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/sys/ntp",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": " Step 8: Set admin User Password",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"password\":\"{{admin_pwd_new}}\",\n    \"shell\": \"bash\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/auth/user/admin",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "02a - Basic Network Config LTM1",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_A Authentication Token copy",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_a_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Create public VLAN",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{VLAN_ext_name}}\",\n  \"partition\": \"Common\",\n  \"autoLasthop\": \"default\",\n  \"cmpHash\": \"default\",\n  \"mtu\": \"1500\",\n  \"tag\": \"{{VLAN_ext_tag}}\",\n  \"interfaces\": \n    [ \n        {\n            \"name\":\"{{VLAN_ext_interface}}\",\n            \"tagged\":{{VLAN_ext_tagged}}\n        }\n    ]\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/net/vlan/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Create private VLAN",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{VLAN_int_name}}\",\n  \"partition\": \"Common\",\n  \"autoLasthop\": \"default\",\n  \"cmpHash\": \"default\",\n  \"mtu\": \"1500\",\n  \"tag\": \"{{VLAN_int_tag}}\",\n  \"interfaces\": \n    [ \n        {\n            \"name\":\"{{VLAN_int_interface}}\",\n            \"tagged\":{{VLAN_int_tagged}}\n        }\n    ]\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/net/vlan/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Create public Self IP",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"name\": \"{{VLAN_ext_name}}_self\",\n   \"partition\": \"Common\",\n   \"address\": \"{{VLAN_ext_selfIP_LTM1}}{{VLAN_ext_selfIP_LTM1_CIDR}}\",\n   \"floating\": \"disabled\",\n   \"trafficGroup\": \"/Common/traffic-group-local-only\",\n   \"vlan\": \"/Common/{{VLAN_ext_name}}\",\n   \"allowService\": [\"default\"]\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/net/self/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Create private Self IP",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"name\": \"{{VLAN_int_name}}_self\",\n   \"partition\": \"Common\",\n   \"address\": \"{{VLAN_int_selfIP_LTM1}}{{VLAN_int_selfIP_LTM1_CIDR}}\",\n   \"floating\": \"disabled\",\n   \"trafficGroup\": \"/Common/traffic-group-local-only\",\n   \"vlan\": \"/Common/{{VLAN_int_name}}\",\n   \"allowService\": [\"default\"]\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/net/self/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": " Step 5: Create a Route",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"Default\",\n  \"partition\": \"Common\",\n  \"gw\": \"{{default_gateway_LTM1}}\",\n  \"mtu\": 0,\n  \"network\": \"0.0.0.0/0\"\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/net/route",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM1_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "02b - Basic Network Config LTM2",
+							"description": "",
+							"item": [
+								{
+									"name": "Step 0: Get BIG-IP_A Authentication Token copy",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"type": "text/javascript",
+												"exec": [
+													"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+													"f5_clear_runtime_vars();",
+													"",
+													"var response_json = JSON.parse(responseBody);",
+													"postman.setEnvironmentVariable(\"big_ip_a_auth_token\", response_json.token.token);",
+													""
+												]
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Authorization",
+												"value": "Basic YWRtaW46MURlbW8x"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/shared/authn/login",
+										"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Create public VLAN",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{VLAN_ext_name}}\",\n  \"partition\": \"Common\",\n  \"autoLasthop\": \"default\",\n  \"cmpHash\": \"default\",\n  \"mtu\": \"1500\",\n  \"tag\": \"{{VLAN_ext_tag}}\",\n  \"interfaces\": \n    [ \n        {\n            \"name\":\"{{VLAN_ext_interface}}\",\n            \"tagged\":{{VLAN_ext_tagged}}\n        }\n    ]\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/net/vlan/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 1: Create private VLAN",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"{{VLAN_int_name}}\",\n  \"partition\": \"Common\",\n  \"autoLasthop\": \"default\",\n  \"cmpHash\": \"default\",\n  \"mtu\": \"1500\",\n  \"tag\": \"{{VLAN_int_tag}}\",\n  \"interfaces\": \n    [ \n        {\n            \"name\":\"{{VLAN_int_interface}}\",\n            \"tagged\":{{VLAN_int_tagged}}\n        }\n    ]\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/net/vlan/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Create public Self IP",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"name\": \"{{VLAN_ext_name}}_self\",\n   \"partition\": \"Common\",\n   \"address\": \"{{VLAN_ext_selfIP_LTM2}}{{VLAN_ext_selfIP_LTM2_CIDR}}\",\n   \"floating\": \"disabled\",\n   \"trafficGroup\": \"/Common/traffic-group-local-only\",\n   \"vlan\": \"/Common/{{VLAN_ext_name}}\",\n   \"allowService\": [\"default\"]\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/net/self/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "Step 3: Create private Self IP",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n   \"name\": \"{{VLAN_int_name}}_self\",\n   \"partition\": \"Common\",\n   \"address\": \"{{VLAN_int_selfIP_LTM2}}{{VLAN_int_selfIP_LTM2_CIDR}}\",\n   \"floating\": \"disabled\",\n   \"trafficGroup\": \"/Common/traffic-group-local-only\",\n   \"vlan\": \"/Common/{{VLAN_int_name}}\",\n   \"allowService\": [\"default\"]\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/net/self/",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": " Step 5: Create a Route",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"name\": \"Default\",\n  \"partition\": \"Common\",\n  \"gw\": \"{{default_gateway_LTM2}}\",\n  \"mtu\": 0,\n  \"network\": \"0.0.0.0/0\"\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/net/route",
+										"description": ""
+									},
+									"response": []
+								},
+								{
+									"name": "save sys config",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-F5-Auth-Token",
+												"value": "{{big_ip_LTM2_auth_token}}"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+										},
+										"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/util/bash",
+										"description": ""
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "03a DNS-LTM-binding DNS1",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_A Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_DNS1_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "create  DNS1 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_DNS1_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter1_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM1_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM1_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_DNS1}}\",\n      \"deviceName\": \"/Common/{{big_ip_DNS1_hostname}}\",\n      \"translation\": \"none\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create  DNS2 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_DNS2_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter2_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM1_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM1_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_DNS2}}\",\n      \"deviceName\": \"/Common/{{big_ip_DNS2_hostname}}\",\n      \"translation\": \"none\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create  LTM Server 1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_LTM1_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter1_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM1_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM1_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_LTM1}}\",\n      \"deviceName\": \"/Common/{{big_ip_LTM1_hostname}}\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create  LTM Server 2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_LTM2_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter2_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM2_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM2_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_LTM2}}\",\n      \"deviceName\": \"/Common/{{big_ip_LTM2_hostname}}\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "03b DNS-LTM-binding DNS2",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_A Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_DNS2_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "create  DNS1 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_DNS1_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter1_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM1_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM1_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_DNS1}}\",\n      \"deviceName\": \"/Common/{{big_ip_DNS1_hostname}}\",\n      \"translation\": \"none\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create  DNS2 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_DNS2_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter2_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM1_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM1_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_DNS2}}\",\n      \"deviceName\": \"/Common/{{big_ip_DNS2_hostname}}\",\n      \"translation\": \"none\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create  LTM Server 1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_LTM1_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter1_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM1_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM1_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_LTM1}}\",\n      \"deviceName\": \"/Common/{{big_ip_LTM1_hostname}}\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create  LTM Server 2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"{{big_ip_LTM2_hostname}}\",\n  \"datacenter\": \"/Common/{{Datacenter2_name}}\",\n  \"enabled\": true,\n  \"exposeRouteDomains\": \"no\",\n  \"iqAllowPath\": \"yes\",\n  \"iqAllowServiceCheck\": \"yes\",\n  \"iqAllowSnmp\": \"yes\",\n  \"limitCpuUsage\": 0,\n  \"limitCpuUsageStatus\": \"disabled\",\n  \"limitMaxBps\": {{DNS_LTM2_server_max_Bps}},\n  \"limitMaxBpsStatus\": \"enabled\",\n  \"limitMaxConnections\": {{DNS_LTM2_server_max_conn}},\n  \"limitMaxConnectionsStatus\": \"enabled\",\n  \"limitMaxPps\": 0,\n  \"limitMaxPpsStatus\": \"disabled\",\n  \"limitMemAvail\": 0,\n  \"limitMemAvailStatus\": \"disabled\",\n  \"linkDiscovery\": \"disabled\",\n  \"monitor\": \"/Common/bigip\",\n  \"product\": \"bigip\",\n  \"virtualServerDiscovery\": \"disabled\",\n  \"addresses\": [\n    {\n      \"name\": \"{{VLAN_ext_selfIP_LTM2}}\",\n      \"deviceName\": \"/Common/{{big_ip_LTM2_hostname}}\"\n    }\n  ]\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		},
+		{
+			"name": "2 - Service deployment",
+			"description": "",
+			"item": [
+				{
+					"name": "01a - LTM1 Config",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_LTM1 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_LTM1_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "Step 1: Create a HTTP Monitor LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_monitor\",\n    \"send\":\"GET / HTTP/1.1\\r\\nHost: {{Service_Name}}\\r\\nUser-Agent: BIG-IP Health Check\\r\\n\\r\\n\",\n    \"recv\":\"Hallo\",\n    \"manualResume\": \"disabled\",\n    \"timeUntilUp\": 0,\n    \"timeout\": 16,\n    \"transparent\": \"disabled\",\n    \"upInterval\": 0\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/monitor/http",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2: Create a Pool LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_pool\",\n    \"monitor\":\"/Common/{{Service_Name}}_monitor\",\n    \"members\": [\n    \t\t\t{{Pool_Members}}\n    \t\t\t]\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/pool/",
+								"description": "there seems to be a problem if a pool is created with a PUT command if the node already exists on BIG-IP.\nHave to doublecheck what to do.\nmaybe splitting the commands into \n1. Create the pool with a put command and then \n2. PATCH command to add the pool members"
+							},
+							"response": []
+						},
+						{
+							"name": "Step 3: Create a HTTP Profile LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_http\",\n    \"insertXforwardedFor\":\"enabled\",\n    \"serverAgentName\":\"{{Service_Name}}\"\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/profile/http",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 4: Create a TCP Profile LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_tcp_clientside\",\n    \"nagle\":\"disabled\",\n    \"idleTimeout\": {{Service_idle_timeout}},\n    \"sendBufferSize\":\"16000\"\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/profile/tcp",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 5: Create a Virtual Server LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}\",\n    \"destination\":\"{{Service_VS_IP_on_LTM1}}:{{Service_Port}}\",\n    \"ipProtocol\":\"tcp\",\n    \"pool\":\"{{Service_Name}}_pool\",\n    \"sourceAddressTranslation\": { \"type\":\"automap\" },\n    \"profiles\": [\n        { \"name\":\"/Common/{{Service_Name}}_tcp_clientside\", \"context\":\"clientside\" },\n        { \"name\":\"/Common/tcp-wan-optimized\", \"context\":\"serverside\" },\n        \"/Common/{{Service_Name}}_http\"\n    ]\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/virtual/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "01b - LTM2 Config",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_LTM2 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_LTM2_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "Step 1: Create a HTTP Monitor LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_monitor\",\n    \"send\":\"GET / HTTP/1.1\\r\\nHost: {{Service_Name}}\\r\\nUser-Agent: BIG-IP Health Check\\r\\n\\r\\n\",\n    \"recv\":\"Hallo\",\n    \"manualResume\": \"disabled\",\n    \"timeUntilUp\": 0,\n    \"timeout\": 16,\n    \"transparent\": \"disabled\",\n    \"upInterval\": 0\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/monitor/http",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2: Create a Pool LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_pool\",\n    \"monitor\":\"/Common/{{Service_Name}}_monitor\",\n    \"members\": [\n    \t\t\t{{Pool_Members}}\n    \t\t\t]\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/pool/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 3: Create a HTTP Profile LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_http\",\n    \"insertXforwardedFor\":\"enabled\",\n    \"serverAgentName\":\"{{Service_Name}}\"\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/profile/http",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 4: Create a TCP Profile LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}_tcp_clientside\",\n    \"nagle\":\"disabled\",\n    \"sendBufferSize\":\"16000\"\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/profile/tcp",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 5: Create a Virtual Server LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\":\"{{Service_Name}}\",\n    \"destination\":\"{{Service_VS_IP_on_LTM1}}:{{Service_Port}}\",\n    \"ipProtocol\":\"tcp\",\n    \"pool\":\"{{Service_Name}}_pool\",\n    \"sourceAddressTranslation\": { \"type\":\"automap\" },\n    \"profiles\": [\n        { \"name\":\"/Common/{{Service_Name}}_tcp_clientside\", \"context\":\"clientside\" },\n        { \"name\":\"/Common/tcp-wan-optimized\", \"context\":\"serverside\" },\n        \"/Common/{{Service_Name}}_http\"\n    ]\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/virtual/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "02a - DNS1 Config",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_DNS1 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_DNS1_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS VS on LTM1 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"name\": \"{{Partition}}/{{Service_Name}}\",\n   \"destination\": \"{{Service_VS_IP_on_LTM1-EIP}}:{{Service_Port}}\",\n   \"enabled\": true,\n   \"limitMaxBps\": 0,\n   \"limitMaxBpsStatus\": \"disabled\",\n   \"limitMaxConnections\": 0,\n   \"limitMaxConnectionsStatus\": \"disabled\",\n   \"limitMaxPps\": 0,\n   \"limitMaxPpsStatus\": \"disabled\",\n   \"translationAddress\": \"{{Service_VS_IP_on_LTM1}}\",\n   \"translationPort\": {{Service_Port}}\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM1_hostname}}/virtual-servers",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS VS on LTM2 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"name\": \"{{Partition}}/{{Service_Name}}\",\n   \"destination\": \"{{Service_VS_IP_on_LTM2-EIP}}:{{Service_Port}}\",\n   \"enabled\": true,\n   \"limitMaxBps\": 0,\n   \"limitMaxBpsStatus\": \"disabled\",\n   \"limitMaxConnections\": 0,\n   \"limitMaxConnectionsStatus\": \"disabled\",\n   \"limitMaxPps\": 0,\n   \"limitMaxPpsStatus\": \"disabled\",\n   \"translationAddress\": \"{{Service_VS_IP_on_LTM2}}\",\n   \"translationPort\": {{Service_Port}}\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM2_hostname}}/virtual-servers",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS pool DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"{{Service_Name}}_pool\",\n    \"alternateMode\": \"{{DNS_LB_method}}\",\n    \"dynamicRatio\": \"disabled\",\n    \"enabled\": true,\n    \"fallbackIp\": \"any\",\n    \"fallbackMode\": \"return-to-dns\",\n    \"limitMaxBps\": 0,\n    \"limitMaxBpsStatus\": \"disabled\",\n    \"limitMaxConnections\": 0,\n    \"limitMaxConnectionsStatus\": \"disabled\",\n    \"limitMaxPps\": 0,\n    \"limitMaxPpsStatus\": \"disabled\",\n    \"loadBalancingMode\": \"{{DNS_LB_method}}\",\n    \"manualResume\": \"disabled\",\n    \"maxAnswersReturned\": 1,\n    \"monitor\": \"default\",\n    \"qosHitRatio\": 5,\n    \"qosHops\": 0,\n    \"qosKilobytesSecond\": 3,\n    \"qosLcs\": 30,\n    \"qosPacketRate\": 1,\n    \"qosRtt\": 50,\n    \"qosTopology\": 0,\n    \"qosVsCapacity\": 0,\n    \"qosVsScore\": 0,\n    \"ttl\": 30,\n    \"verifyMemberAvailability\": \"enabled\",\n    \"members\": [\n    \t{\n            \"name\": \"{{Service_Name}}\",\n            \"partition\": \"{{Partition}}\",\n            \"subPath\": \"{{big_ip_LTM1_hostname}}:{{Partition}}\",\n            \"fullPath\": \"{{Partition}}/{{big_ip_LTM1_hostname}}:{{Partition}}/{{Service_Name}}\",\n            \"enabled\": true,\n            \"limitMaxBps\": 0,\n            \"limitMaxBpsStatus\": \"disabled\",\n            \"limitMaxConnections\": 0,\n            \"limitMaxConnectionsStatus\": \"disabled\",\n            \"limitMaxPps\": 0,\n            \"limitMaxPpsStatus\": \"disabled\",\n            \"memberOrder\": 0,\n            \"monitor\": \"default\",\n            \"ratio\": 1\n    \t},\n    \t{\n            \"name\": \"{{Service_Name}}\",\n            \"partition\": \"{{Partition}}\",\n            \"subPath\": \"{{big_ip_LTM2_hostname}}:{{Partition}}\",\n            \"fullPath\": \"{{Partition}}/{{big_ip_LTM2_hostname}}:{{Partition}}/{{Service_Name}}\",\n            \"enabled\": true,\n            \"limitMaxBps\": 0,\n            \"limitMaxBpsStatus\": \"disabled\",\n            \"limitMaxConnections\": 0,\n            \"limitMaxConnectionsStatus\": \"disabled\",\n            \"limitMaxPps\": 0,\n            \"limitMaxPpsStatus\": \"disabled\",\n            \"memberOrder\": 0,\n            \"monitor\": \"default\",\n            \"ratio\": 1\n    \t}\n    \t]\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/pool/a/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS wide IP DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n            \"name\": \"{{Service_Name}}\",\n            \"enabled\": true,\n            \"failureRcode\": \"noerror\",\n            \"failureRcodeResponse\": \"disabled\",\n            \"failureRcodeTtl\": 0,\n            \"lastResortPool\": \"\",\n            \"minimalResponse\": \"enabled\",\n            \"persistCidrIpv4\": 32,\n            \"persistCidrIpv6\": 128,\n            \"persistence\": \"disabled\",\n            \"poolLbMode\": \"round-robin\",\n            \"ttlPersistence\": 3600,\n            \"pools\": [\n                {\n                    \"name\": \"{{Service_Name}}_pool\",\n                    \"partition\": \"Common\",\n                    \"order\": 0,\n                    \"ratio\": 1\n                }\n                ]\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/wideip/a",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "02b - DNS2 Config",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_DNS2 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_DNS2_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS VS on LTM1 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"name\": \"{{Partition}}/{{Service_Name}}\",\n   \"destination\": \"{{Service_VS_IP_on_LTM1-EIP}}:{{Service_Port}}\",\n   \"enabled\": true,\n   \"limitMaxBps\": 0,\n   \"limitMaxBpsStatus\": \"disabled\",\n   \"limitMaxConnections\": 0,\n   \"limitMaxConnectionsStatus\": \"disabled\",\n   \"limitMaxPps\": 0,\n   \"limitMaxPpsStatus\": \"disabled\",\n   \"translationAddress\": \"{{Service_VS_IP_on_LTM1}}\",\n   \"translationPort\": {{Service_Port}}\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM1_hostname}}/virtual-servers",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS VS on LTM2 Server object",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"name\": \"{{Partition}}/{{Service_Name}}\",\n   \"destination\": \"{{Service_VS_IP_on_LTM2-EIP}}:{{Service_Port}}\",\n   \"enabled\": true,\n   \"limitMaxBps\": 0,\n   \"limitMaxBpsStatus\": \"disabled\",\n   \"limitMaxConnections\": 0,\n   \"limitMaxConnectionsStatus\": \"disabled\",\n   \"limitMaxPps\": 0,\n   \"limitMaxPpsStatus\": \"disabled\",\n   \"translationAddress\": \"{{Service_VS_IP_on_LTM2}}\",\n   \"translationPort\": {{Service_Port}}\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM2_hostname}}/virtual-servers",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS pool DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"{{Service_Name}}_pool\",\n    \"alternateMode\": \"{{DNS_LB_method}}\",\n    \"dynamicRatio\": \"disabled\",\n    \"enabled\": true,\n    \"fallbackIp\": \"any\",\n    \"fallbackMode\": \"return-to-dns\",\n    \"limitMaxBps\": 0,\n    \"limitMaxBpsStatus\": \"disabled\",\n    \"limitMaxConnections\": 0,\n    \"limitMaxConnectionsStatus\": \"disabled\",\n    \"limitMaxPps\": 0,\n    \"limitMaxPpsStatus\": \"disabled\",\n    \"loadBalancingMode\": \"{{DNS_LB_method}}\",\n    \"manualResume\": \"disabled\",\n    \"maxAnswersReturned\": 1,\n    \"monitor\": \"default\",\n    \"qosHitRatio\": 5,\n    \"qosHops\": 0,\n    \"qosKilobytesSecond\": 3,\n    \"qosLcs\": 30,\n    \"qosPacketRate\": 1,\n    \"qosRtt\": 50,\n    \"qosTopology\": 0,\n    \"qosVsCapacity\": 0,\n    \"qosVsScore\": 0,\n    \"ttl\": 30,\n    \"verifyMemberAvailability\": \"enabled\",\n    \"members\": [\n    \t{\n            \"name\": \"{{Service_Name}}\",\n            \"partition\": \"{{Partition}}\",\n            \"subPath\": \"{{big_ip_LTM1_hostname}}:{{Partition}}\",\n            \"fullPath\": \"{{Partition}}/{{big_ip_LTM1_hostname}}:{{Partition}}/{{Service_Name}}\",\n            \"enabled\": true,\n            \"limitMaxBps\": 0,\n            \"limitMaxBpsStatus\": \"disabled\",\n            \"limitMaxConnections\": 0,\n            \"limitMaxConnectionsStatus\": \"disabled\",\n            \"limitMaxPps\": 0,\n            \"limitMaxPpsStatus\": \"disabled\",\n            \"memberOrder\": 0,\n            \"monitor\": \"default\",\n            \"ratio\": 1\n    \t},\n    \t{\n            \"name\": \"{{Service_Name}}\",\n            \"partition\": \"{{Partition}}\",\n            \"subPath\": \"{{big_ip_LTM2_hostname}}:{{Partition}}\",\n            \"fullPath\": \"{{Partition}}/{{big_ip_LTM2_hostname}}:{{Partition}}/{{Service_Name}}\",\n            \"enabled\": true,\n            \"limitMaxBps\": 0,\n            \"limitMaxBpsStatus\": \"disabled\",\n            \"limitMaxConnections\": 0,\n            \"limitMaxConnectionsStatus\": \"disabled\",\n            \"limitMaxPps\": 0,\n            \"limitMaxPpsStatus\": \"disabled\",\n            \"memberOrder\": 0,\n            \"monitor\": \"default\",\n            \"ratio\": 1\n    \t}\n    \t]\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/pool/a/",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS wide IP DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n            \"name\": \"{{Service_Name}}\",\n            \"enabled\": true,\n            \"failureRcode\": \"noerror\",\n            \"failureRcodeResponse\": \"disabled\",\n            \"failureRcodeTtl\": 0,\n            \"lastResortPool\": \"\",\n            \"minimalResponse\": \"enabled\",\n            \"persistCidrIpv4\": 32,\n            \"persistCidrIpv6\": 128,\n            \"persistence\": \"disabled\",\n            \"poolLbMode\": \"round-robin\",\n            \"ttlPersistence\": 3600,\n            \"pools\": [\n                {\n                    \"name\": \"{{Service_Name}}_pool\",\n                    \"partition\": \"Common\",\n                    \"order\": 0,\n                    \"ratio\": 1\n                }\n                ]\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/wideip/a",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config DNS2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		},
+		{
+			"name": "3 - Service removal",
+			"description": "",
+			"item": [
+				{
+					"name": "01a - LTM Config removal",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_LTM1 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_LTM1_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "Step 5: delete a Virtual Server LTM1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/virtual/{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 4: delete a TCP Profile LTM1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/profile/tcp/{{Service_Name}}_tcp_clientside",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 3: delete a HTTP Profile LTM1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/profile/http/{{Service_Name}}_http",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2: delte a Pool LTM1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/pool/{{Service_Name}}_pool",
+								"description": "there seems to be a problem if a pool is created with a PUT command if the node already exists on BIG-IP.\nHave to doublecheck what to do.\nmaybe splitting the commands into \n1. Create the pool with a put command and then \n2. PATCH command to add the pool members"
+							},
+							"response": []
+						},
+						{
+							"name": "Step 1: delte a HTTP Monitor LTM1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/ltm/monitor/http/{{Service_Name}}_monitor",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config LTM1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_LTM1_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "01b - LTM2 Config removal",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_LTM2 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_LTM2_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "Step 5: delete a Virtual Server LTM2",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/virtual/{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 4: delete a TCP Profile LTM2",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/profile/tcp/{{Service_Name}}_tcp_clientside",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 3: delete a HTTP Profile LTM2",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/profile/http/{{Service_Name}}_http",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 2: delte a Pool LTM2",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/pool/{{Service_Name}}_pool",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "Step 1: delte a HTTP Monitor LTM2",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/ltm/monitor/http/{{Service_Name}}_monitor",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config LTM2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_LTM2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_LTM2_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "02a - DNS1 Config removal",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_DNS1 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_DNS1_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "delte DNS wide IP DNS1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/wideip/a/{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "delete DNS pool DNS1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/pool/a/{{Service_Name}}_pool",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "delete DNS VS on LTM1 Server object",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM1_hostname}}/virtual-servers/~Common~{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS VS on LTM2 Server object",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM2_hostname}}/virtual-servers/~Common~{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS1_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_DNS1_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "02b - DNS2 Config removal",
+					"description": "",
+					"item": [
+						{
+							"name": "Step 0: Get BIG-IP_DNS1 Authentication Token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"eval(postman.getGlobalVariable(\"_f5_workflow_functions\"));",
+											"f5_clear_runtime_vars();",
+											"",
+											"var response_json = JSON.parse(responseBody);",
+											"postman.setEnvironmentVariable(\"big_ip_DNS2_auth_token\", response_json.token.token);",
+											""
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Basic YWRtaW46MURlbW8x"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\":\"{{admin_name}}\",\n    \"password\":\"{{admin_pwd}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/shared/authn/login",
+								"description": "getting BIG-IP A Authentication token and saving it in environment variable bigip"
+							},
+							"response": []
+						},
+						{
+							"name": "delte DNS wide IP DNS1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/wideip/a/{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "delete DNS pool DNS1",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/pool/a/{{Service_Name}}_pool",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "delete DNS VS on LTM1 Server object",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM1_hostname}}/virtual-servers/~Common~{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "create DNS VS on LTM2 Server object",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/gtm/server/{{big_ip_LTM2_hostname}}/virtual-servers/~Common~{{Service_Name}}",
+								"description": ""
+							},
+							"response": []
+						},
+						{
+							"name": "save sys config DNS1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-F5-Auth-Token",
+										"value": "{{big_ip_DNS2_auth_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"command\":\"run\",\n\t\"utilCmdArgs\":\"-c \\\"tmsh save sys config\\\"\"\n\t\n}"
+								},
+								"url": "https://{{big_ip_DNS2_mgmt}}/mgmt/tm/util/bash",
+								"description": ""
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		}
+	]
+}

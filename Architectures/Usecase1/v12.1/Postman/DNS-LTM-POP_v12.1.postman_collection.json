@@ -1,8 +1,8 @@
 {
 	"variables": [],
 	"info": {
-		"name": "01 GTM-LTM-POP one file setup v12.1",
-		"_postman_id": "026b4637-d1f5-12de-ebd2-42d7fe954ff5",
+		"name": "DNS-LTM-POP_v12.1",
+		"_postman_id": "998e91bf-b5e5-9eee-2e9e-834de91ebb5f",
 		"description": "This Pollection establishes configures 2 BIG-IP DNS and 2 BIG-IP LTM to work together for Globas Load balancing.\n\nThe Design is that one BIG-IP DNS and one BIG-IP LTM live in the same datacenter.\n\n",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
