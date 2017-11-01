@@ -59,28 +59,30 @@ Perform the following steps to complete this task:
 #. Import the Environment file by clicking `Import --> Import from Link` and
    pasting the following URL and clicking `Import`:
 
-      https://raw.githubusercontent.com/vbojko/F5_Service_POP/master/Architectures/Usecase1/v12.1/Postman/DNS-LTM-POP_Environment_Setup.postman_environment.json
+   https://raw.githubusercontent.com/vbojko/F5_Service_POP/master/Architectures/Usecase1/v12.1/Postman/DNS-LTM-POP_Environment_Setup.postman_environment.json
 
 #. Set your environment to
    ``DNS-LTM-POP_Environment_Setup`` by using the menu at the top right
    of your Postman window:
 
-#. Install ``F5-postman-workflows``
+#. Install ``F5-postman-workflows``.
    The Collection we installed above **REQUIRES** this framework for testing and
    polling functionality.
+
    **You must install this framework into Postman by importing another
    collection**.
-   - Import the collection file by clicking: `Import --> Import from Link` and
-   pasting the following URL and clicking `Import`:
-   Enter:
-   ``https://raw.githubusercontent.com/0xHiteshPatel/f5-postman-workflows/master/F5_Postman_Workflows.postman_collection.json``
-   in the field
-   - click the 'Import' button
-   - Navigate to your Postman Collections
-   - Expand the ‘F5_Postman_Workflows’ collection
-   - Expand the ‘Install’ folder
-   - Click the ‘Install/Upgrade f5-postman-workflows’ items
-   - Click the ‘Send’ button
-   - Verify the installation was successful by:
-   - Examine the response tests and ensure the ‘Install Successful’ test passed
+
+    - Import the collection file by clicking: `Import --> Import from Link` and
+      pasting the following URL and clicking `Import`in the field:
+
+      ``https://raw.githubusercontent.com/0xHiteshPatel/f5-postman-workflows/master/F5_Postman_Workflows.postman_collection.json``
+
+    - click the 'Import' button
+    - Navigate to your Postman Collections
+    - Expand the ‘F5_Postman_Workflows’ collection
+    - Expand the ‘Install’ folder
+    - Click the ‘Install/Upgrade f5-postman-workflows’ items
+    - Click the ‘Send’ button
+    - Verify the installation was successful by:
+    - Examine the response tests and ensure the ‘Install Successful’ test passed
       - Examine your Postman Global Environment and look for a _f5_workflow_functions item populated with JavaScript code
